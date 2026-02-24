@@ -1,0 +1,76 @@
+# Implementation Plan - AI Social Engineering Defense System (SEDS)
+
+This plan outlines the step-by-step development of SEDS, following the survival-first priority order requested.
+
+## User Review Required
+
+> [!IMPORTANT]
+> This plan assumes a clean environment. We will be using FastAPI for the backend and React (Vite) for the frontend as per the TRD.
+> Groq API key and Supabase credentials will be required for full functionality.
+
+## Proposed Changes
+
+### Phase 1: Survival Core (Backend & AI)
+Goal: Get the core image-to-AI pipeline working.
+
+#### [NEW] [backend/main.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/main.py)
+- Initialize FastAPI app.
+- Set up basic error handling and CORS.
+
+#### [NEW] [backend/routes/analyze.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/routes/analyze.py)
+- Implement `/analyze-image` endpoint.
+- Integrate `EasyOCR` for text extraction.
+- Integrate `Groq` for scam analysis using the provided prompt template.
+
+#### [NEW] [backend/services/ocr_service.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/services/ocr_service.py)
+- Wrapper for EasyOCR.
+
+#### [NEW] [backend/services/groq_service.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/services/groq_service.py)
+- Wrapper for Groq API calls.
+
+---
+
+### Phase 2: Risk Assessment
+Goal: Implement the 10-question risk questionnaire and AI-enhanced result.
+
+#### [NEW] [backend/routes/risk.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/routes/risk.py)
+- Implement `/risk-score` endpoint.
+- Logic for rule-based scoring (unsafe answer = +10).
+- Integrate Groq for risk prediction and recommendations.
+
+---
+
+### Phase 3: Frontend & Authentication
+Goal: Build the user interface and secure it with Supabase.
+
+#### [NEW] [frontend/](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/frontend/)
+- Initialize Vite-React project.
+- Implement Login, Dashboard, Analyzer, and Risk Assessment pages.
+- Integrate Supabase Auth.
+
+#### [MODIFY] [backend/main.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/main.py)
+- Add JWT middleware to protect endpoints using Supabase.
+
+---
+
+### Phase 4: Security Hardening & Demo Stability
+Goal: Implement requirements from [RATELIMIT.md](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/RATELIMIT.md) and finalize demo readiness.
+
+#### [MODIFY] [backend/main.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/main.py)
+- Implement rate limiting (IP + user-based).
+- Add strict Pydantic models for input validation.
+
+#### [NEW] [backend/services/fallback_service.py](file:///e:/MUDASSIR/BTECH/HACKATHON/VHACK2026/backend/services/fallback_service.py)
+- Heuristic fallback logic for scam detection if AI/OCR fails.
+
+## Verification Plan
+
+### Automated Tests
+- `pytest`: Run unit tests for backend logic (scoring, validation).
+- `curl/Postman`: Test `/analyze-image` with sample screenshots.
+
+### Manual Verification
+1. **Survival Test**: Upload a known scam screenshot and verify JSON output from backend.
+2. **Risk Test**: Complete the questionnaire and verify score calculation.
+3. **Security Test**: Attempt to spam the API to trigger rate limiting.
+4. **UI Test**: Verify the responsive design and loading states.

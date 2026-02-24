@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-multipart
+easyocr
+groq
+supabase
+pydantic
+pydantic-settings
+python-dotenv
+axios
+slowapi
+python-jose[cryptography]
+pillow
+numpy
+pandas
