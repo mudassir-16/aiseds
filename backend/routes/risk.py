@@ -30,12 +30,12 @@ def calculate_base_score(answers: Dict[str, str]) -> int:
         "backup_data": "No"
     }
 
-    score = 0
+    calculated_score: int = 0
     for key, unsafe_val in unsafe_patterns.items():
         if answers.get(key) == unsafe_val:
-            score += 10
+            calculated_score += 10
     
-    return min(score, 100)
+    return min(calculated_score, 100)
 
 @router.post("/risk-score", response_model=RiskAssessmentResponse)
 @limiter.limit("5/minute")

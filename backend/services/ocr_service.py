@@ -5,8 +5,15 @@ import io
 
 class OCRService:
     def __init__(self):
-        # Initialize the reader with English
-        self.reader = easyocr.Reader(['en'])
+        self._reader = None
+
+    @property
+    def reader(self):
+        if self._reader is None:
+            # Initialize the reader with English
+            # download_enabled=True is default, but we'll be explicit
+            self._reader = easyocr.Reader(['en'], gpu=False) 
+        return self._reader
 
     def extract_text(self, image_bytes: bytes) -> str:
         try:

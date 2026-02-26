@@ -1,0 +1,5 @@
+{
+    "unwantedRecommendations": [
+        "meta.pyre2"
+    ]
+}
