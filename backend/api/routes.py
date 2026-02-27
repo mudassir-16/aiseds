@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from auth import get_current_user
 from ocr import extract_text
-from groq_client import analyse_scam, predict_risk, translate_to_english
+from groq_client import analyse_scam, predict_risk, translate_to_english, simulate_scam
 from risk import calculate_risk
 from db import save_scan_report, save_risk_report
 
@@ -149,3 +149,26 @@ async def risk_score(
 async def get_reports(current_user: dict = Depends(get_current_user)):
     """Health-check endpoint. Frontend reads reports via Supabase JS SDK."""
     return {"message": "Use Supabase client on frontend to read reports.", "user": current_user.get("sub")}
+
+
+# ---------------------------------------------------------------------------
+# POST /api/simulate-scam
+# ---------------------------------------------------------------------------
+
+class SimulateRequest(BaseModel):
+    scam_type: str
+
+
+@router.post("/simulate-scam")
+async def simulate_scam_endpoint(
+    body: SimulateRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Generate a fake scam message and explanation based on the chosen type.
+    """
+    if not body.scam_type:
+        raise HTTPException(status_code=400, detail="Missing scam_type parameter")
+
+    result = simulate_scam(body.scam_type)
+    return result

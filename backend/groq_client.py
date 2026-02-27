@@ -357,3 +357,65 @@ def predict_risk(risk_score: int, risk_level: str, unsafe_answers: list) -> dict
     except Exception as exc:
         logger.warning(f"Groq risk prediction failed: {exc}. Using static fallback.")
         return RISK_FALLBACK_BY_LEVEL.get(risk_level, RISK_FALLBACK_BY_LEVEL["Medium Risk"])
+
+# ---------------------------------------------------------------------------
+# Scam Simulation Mode (SSM)
+# ---------------------------------------------------------------------------
+
+SIMULATION_PROMPT = """\
+You are a cybersecurity fraud simulation system.
+
+Generate a realistic but fake scam message for educational purposes.
+
+Scam Type: {selected_scam_type}
+
+The message must:
+- Sound realistic
+- Include psychological manipulation tactics
+- Be similar to real WhatsApp or SMS scams
+- Be 4–6 lines long
+- Include emotional triggers like urgency, fear, authority, or reward bait
+
+After generating the message, explain:
+1. Which manipulation tactics were used.
+2. Why this scam works psychologically.
+3. How a user should respond safely.
+
+Return response STRICTLY in JSON format:
+
+{{
+  "fake_scam_message": "",
+  "tactics_used": [],
+  "psychological_explanation": "",
+  "safe_response_guidelines": []
+}}
+"""
+
+def simulate_scam(scam_type: str) -> dict:
+    """Generate a simulated scam message and educational breakdown."""
+    prompt = SIMULATION_PROMPT.format(selected_scam_type=scam_type)
+    
+    messages = [
+        {"role": "system", "content": "You are a cybersecurity training AI formatting output as JSON."},
+        {"role": "user", "content": prompt},
+    ]
+    
+    try:
+        raw = _chat(messages, max_tokens=1000)
+        result = _extract_json(raw)
+        
+        # Ensure all required keys exist
+        for key in ("fake_scam_message", "tactics_used", "psychological_explanation", "safe_response_guidelines"):
+            if key not in result:
+                raise ValueError(f"Missing key in simulation response: {key}")
+                
+        return result
+    except Exception as exc:
+        logger.error(f"Scam simulation failed: {exc}")
+        # Static fallback if generation fails
+        return {
+            "fake_scam_message": f"[Fake {scam_type}] Urgent: Your account is suspended. Click here to verify your identity immediately: http://fake-verify-link.com",
+            "tactics_used": ["Urgency", "Fear"],
+            "psychological_explanation": "This relies on creating a sense of panic so the victim acts without thinking.",
+            "safe_response_guidelines": ["Do not click the link.", "Verify straight from the official app bypassing the message entirely."]
+        }
