@@ -1,38 +1,78 @@
-from fastapi import FastAPI, Request
+"""
+main.py — FastAPI application entry point.
+
+Sets KMP_DUPLICATE_LIB_OK to suppress the OMP/OpenMP conflict that EasyOCR
+triggers on Windows (libiomp5md.dll clash).  This must happen before any
+torch/numpy import, so we set it at the very top.
+"""
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"   # fix EasyOCR/OpenMP conflict on Windows
+
+from contextlib import asynccontextmanager
+import logging
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from backend.routes import analyze, risk
 
-# Initialize Limiter
-limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="AI Social Engineering Defense System (SEDS)")
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+from api.routes import router
 
-# Configure CORS
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Pre-warm EasyOCR at startup so the first image request is fast."""
+    import asyncio, concurrent.futures
+    logger.info("Pre-warming OCR engine…")
+
+    def _warm():
+        try:
+            from ocr import _get_reader
+            reader = _get_reader()   # triggers model download / load
+            if reader:
+                # Run a tiny dummy inference to trigger PyTorch JIT compilation.
+                # This means the first real image request won't pay the compile cost.
+                import numpy as np
+                dummy_img = np.zeros((64, 256, 3), dtype=np.uint8)
+                reader.readtext(dummy_img, detail=0)
+                logger.info("OCR engine fully warmed (JIT compiled).")
+            else:
+                logger.warning("OCR reader unavailable — will fall back at runtime.")
+        except Exception as exc:
+            logger.warning(f"OCR pre-warm failed (will fall back at runtime): {exc}")
+
+    loop = asyncio.get_event_loop()
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        await loop.run_in_executor(pool, _warm)
+
+    yield   # ← app runs here
+    logger.info("SEDS backend shutting down.")
+
+
+app = FastAPI(
+    title="SEDS — AI Social Engineering Defense System",
+    description="AI-powered financial fraud prevention backend",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS — allow frontend origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://*.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routes
-app.include_router(analyze.router, prefix="/api", tags=["Analysis"])
-app.include_router(risk.router, prefix="/api", tags=["Risk"])
+app.include_router(router, prefix="/api")
+
 
 @app.get("/")
-@limiter.limit("5/minute")
-async def root(request: Request):
-    return {"message": "Welcome to SEDS API", "status": "running"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+def health():
+    return {"status": "ok", "service": "SEDS Backend"}

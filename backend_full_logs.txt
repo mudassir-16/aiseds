@@ -1,9 +1,0 @@
-﻿python : Neither CUDA nor MPS are available - defaulting to CPU. Note: This module is much 
-faster with a GPU.
-At line:1 char:1
-+ python -m backend.main 2>&1 | Out-File -FilePath backend_full_logs.tx ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (Neither CUDA no...ter with a GPU.:String) [], 
-    RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 

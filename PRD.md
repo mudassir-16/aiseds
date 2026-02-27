@@ -1,173 +1,174 @@
 PRODUCT REQUIREMENTS DOCUMENT (PRD)
-Product Name
+🏷️ Project Title
 AI Social Engineering Defense System (SEDS)
-Tagline: “AI-Powered FinTech Fraud Prevention for Digital India”
-1️⃣ EXECUTIVE SUMMARY
+AI-Powered Financial Fraud Prevention for Digital India
+1️⃣ Executive Summary
 
-India faces exponential growth in:
+India is witnessing a rapid increase in digital payment fraud, especially through WhatsApp-based scams, UPI refund fraud, OTP phishing, and fake KYC alerts.
 
-UPI fraud
+Unlike traditional cyberattacks that exploit system vulnerabilities, modern financial fraud primarily exploits human psychology through emotional manipulation such as urgency, fear, authority impersonation, and reward bait.
 
-OTP scams
+Existing cybersecurity tools focus on malicious URLs or enterprise protection. There is no accessible AI-powered system that:
 
-WhatsApp financial scams
+Analyzes screenshot-based financial scams
 
-Fake KYC suspension alerts
+Detects social engineering tactics
 
-Banking impersonation attacks
+Evaluates personal vulnerability to fraud
 
-Most attacks happen via screenshots and forwarded messages, not malicious URLs.
+SEDS is designed to bridge this gap.
 
-Existing tools:
+2️⃣ Problem Statement
 
-Focus on enterprise systems
+Modern financial fraud no longer relies on hacking systems — it relies on manipulating human behavior.
 
-Detect links only
+Scammers use WhatsApp screenshots, SMS alerts, and fake banking messages to emotionally pressure users into sharing OTPs or approving fraudulent UPI transactions.
 
-Do not analyze screenshot-based fraud
+Current cybersecurity tools:
 
-Do not evaluate personal vulnerability
+Do not analyze screenshot-based scams
 
-SEDS is an AI-powered system that:
+Do not detect behavioral manipulation patterns
 
-Detects screenshot-based financial scams
+Do not assess individual cyber hygiene
 
-Identifies psychological manipulation tactics
+This leaves everyday digital payment users vulnerable to emotionally driven financial fraud.
 
-Calculates personal cyber risk score
+There is a need for an AI-driven system that detects screenshot-based scams and evaluates behavioral vulnerability to proactively prevent financial fraud.
 
-Predicts most likely scam vulnerability
+3️⃣ Vision
 
-Provides personalized prevention plan
+To transform financial cybersecurity from reactive technical detection to proactive behavioral defense using AI-powered fraud intelligence.
 
-Domain Coverage:
+4️⃣ Target Users
 
-Cybersecurity ✅
-
-FinTech Fraud Prevention ✅
-
-AI/ML Innovation ✅
-
-Social Impact ✅
-
-2️⃣ TARGET USERS
-
-Primary:
-
-Digital payment users
+Digital payment users (UPI, wallets, online banking)
 
 Students
 
 Small business owners
 
-Non-technical citizens
+Elderly citizens
 
-Secondary:
+Non-technical users
 
-FinTech startups
-
-Banks
-
-Government awareness programs
-
-3️⃣ UNIQUE DIFFERENTIATION
-
-Unlike typical phishing detectors:
-
-✔ Screenshot-based scam detection
-✔ Psychological manipulation analysis
-✔ Behavioral vulnerability prediction
-✔ FinTech fraud focus
-✔ Citizen-centric security
-
-Core Differentiator:
-
-Detects the human manipulation strategy behind financial scams.
-
-4️⃣ CORE FEATURES
-🔎 FEATURE 1: Screenshot Scam Analyzer
+5️⃣ Core Features
+🔎 Feature 1: WhatsApp Screenshot Scam Detection
 Input:
 
-Upload suspicious screenshot (WhatsApp, SMS, UPI alert)
+User uploads suspicious screenshot (WhatsApp, SMS, UPI message).
 
 Processing:
 
-OCR text extraction
+Tesseract OCR extracts text
 
-LLM analysis via Groq
+Preprocessing improves text clarity
 
-Psychological tactic detection
+Extracted text sent to Groq LLM
+
+AI analyzes:
+
+Scam probability
+
+Psychological manipulation tactics
+
+Suspicious URLs
+
+Financial fraud indicators
 
 Output:
 
 Scam Probability (%)
 
-Detected Manipulation Tactics
+Tactics Detected
 
 Explanation
 
 Recommended Action
 
-📊 FEATURE 2: Cyber Risk Assessment Engine
-Input:
+🧠 Feature 2: Psychological Manipulation Detection
 
-10-question user assessment
+System identifies:
 
-Processing:
+Urgency pressure
 
-Rule-based numeric scoring
+Fear triggers
 
-LLM vulnerability analysis
+Authority impersonation
 
-Scam type prediction
+Reward bait
 
-Output:
+Scarcity tactics
 
-Risk Score (0–100)
+This differentiates the system from basic phishing detectors.
 
-Risk Level (Low / Medium / High)
+📊 Feature 3: Cyber Risk Assessment Engine
+10-question behavioral assessment
 
-Most Likely Scam Type
+Evaluates:
 
-Personalized Action Plan
+Password reuse
 
-🔐 FEATURE 3: Authentication (Supabase)
+2FA usage
+
+OTP sharing behavior
+
+Public WiFi usage
+
+UPI verification habits
+
+Scoring:
+
+Unsafe behavior = +10
+Score range: 0–100
+
+Risk Levels:
+
+0–30 → Low
+
+31–60 → Medium
+
+61–100 → High
+
+🔮 Feature 4: Vulnerability Prediction
+
+System predicts:
+
+Most likely scam type user is vulnerable to
+
+Provides 5 personalized prevention steps
+
+🔐 Feature 5: Authentication (Supabase)
 
 Email/password login
 
-JWT-based session
+JWT session handling
 
-Protected routes
+Secure dashboard
 
-Save scan history
+Saved scan history
 
-Save risk reports
+Saved risk reports
 
-5️⃣ TECH STACK
+6️⃣ Technical Stack
 
 Frontend:
 
-React
+Next.js (App Router)
 
 Tailwind CSS
-
-Axios
 
 Backend:
 
 FastAPI
 
-Python
+OCR:
+
+Tesseract
 
 AI:
 
 Groq API (Llama model)
-
-OCR:
-
-EasyOCR (Primary)
-
-Hardcoded fallback (Emergency)
 
 Database & Auth:
 
@@ -177,180 +178,116 @@ Deployment:
 
 Frontend → Vercel
 
-Backend → Railway / Render
+Backend → Railway/Render
 
 Supabase → Cloud
 
-6️⃣ SYSTEM ARCHITECTURE
+7️⃣ System Architecture
 
-User Login (Supabase Auth)
+User
+↓
+Login (Supabase)
 ↓
 Upload Screenshot
 ↓
-Backend:
-EasyOCR → Extract Text
+FastAPI
 ↓
-Send text to Groq
+Tesseract OCR
 ↓
-Receive JSON analysis
+Groq AI Analysis
+↓
+Return JSON Response
 ↓
 Store in Supabase
 ↓
-Display Report
+Display Results
 
-Risk Assessment:
+Risk Assessment
 ↓
 Rule-based scoring
 ↓
-Send summary to Groq
+Groq vulnerability analysis
 ↓
-Receive vulnerability prediction
-↓
-Store & display
+Store + display
 
-7️⃣ DATABASE DESIGN (Supabase)
-Table: scan_reports
-Field	Type
-id	uuid
-user_id	uuid
-extracted_text	text
-scam_probability	float
-tactics_detected	json
-explanation	text
-recommended_action	text
-created_at	timestamp
-Table: risk_reports
-Field	Type
-id	uuid
-user_id	uuid
-risk_score	int
-risk_level	text
-predicted_scam_type	text
-explanation	text
-recommendations	json
-created_at	timestamp
-8️⃣ GROQ PROMPT TEMPLATE
-🔎 Scam Analysis Prompt
-You are a cybersecurity analyst specializing in financial fraud and social engineering.
-
-Analyze the following message extracted from a screenshot:
-
-[INSERT_TEXT]
-
-Tasks:
-1. Determine if this is a financial scam.
-2. Assign a scam probability (0-100).
-3. Identify psychological tactics used:
-   - Urgency
-   - Fear
-   - Authority impersonation
-   - Reward bait
-   - Scarcity
-4. Explain reasoning clearly.
-5. Provide recommended user action.
-
-Respond strictly in JSON:
-{
-  "scam_probability": number,
-  "tactics_detected": [],
-  "explanation": "",
-  "recommended_action": ""
-}
-📊 Risk Prediction Prompt
-You are a cybersecurity risk analyst.
-
-User behavior summary:
-[INSERT_SUMMARY]
-
-Risk score: [INSERT_SCORE]/100
-
-Tasks:
-1. Determine risk level.
-2. Predict most likely financial scam vulnerability.
-3. Explain reasoning.
-4. Provide 5 personalized security recommendations.
-
-Respond in JSON format:
-{
-  "risk_level": "",
-  "predicted_scam_type": "",
-  "explanation": "",
-  "recommendations": []
-}
-9️⃣ RISK QUESTIONNAIRE
-
-Do you reuse passwords?
-
-Do you enable 2FA?
-
-Do you click unknown links from WhatsApp?
-
-Do you verify UPI requests?
-
-Have you shared OTP before?
-
-Do you use public WiFi for banking?
-
-Do you install apps from unknown sources?
-
-Do you update your phone regularly?
-
-Do you verify bank messages via official websites?
-
-Do you backup critical data?
-
-Scoring:
-Unsafe answer = +10 risk
-Max = 100
-
-🔟 API DESIGN (FastAPI)
+8️⃣ API Endpoints
 
 POST /analyze-image
 POST /risk-score
-GET /user-reports
+GET /reports
 
-All routes require JWT authentication.
+All routes protected by JWT.
 
-1️⃣1️⃣ FOLDER STRUCTURE
+9️⃣ Database Schema
+scan_reports
 
-Backend:
+id
 
-backend/
-├── main.py
-├── routes/
-│   ├── analyze.py
-│   ├── risk.py
-├── services/
-│   ├── ocr_service.py
-│   ├── groq_service.py
-│   ├── scoring_service.py
-├── models/
-│   ├── schemas.py
-├── utils/
-├── requirements.txt
+user_id
 
-Frontend:
+extracted_text
 
-frontend/
-├── src/
-│   ├── pages/
-│   │   ├── Login.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Analyzer.jsx
-│   │   ├── RiskAssessment.jsx
-│   ├── components/
-│   ├── services/
-│   │   ├── api.js
-│   │   ├── supabase.js
-│   └── App.js
-1️⃣2️⃣ REAL-TIME DEMO STRATEGY
+scam_probability
 
-Layer 1: Live Groq + OCR
-Layer 2: Preloaded scam images
-Layer 3: Local heuristic fallback
+tactics_detected
 
-Always keep:
+explanation
 
-3 scam screenshots ready
+recommended_action
 
-1 safe message ready
+created_at
+
+risk_reports
+
+id
+
+user_id
+
+risk_score
+
+risk_level
+
+predicted_scam_type
+
+recommendations
+
+created_at
+
+🔟 Demo Strategy
+
+Primary:
+Live screenshot upload → OCR → Groq → result
+
+Backup:
+Preloaded scam screenshots
+
+Emergency fallback:
+Keyword-based heuristic detection
+
+System must never crash during demo.
+
+1️⃣1️⃣ Non-Functional Requirements
+
+Response time < 8 seconds
+
+Clean UI
+
+Error handling
+
+Loading indicators
+
+File size validation
+
+Stable demo performance
+
+1️⃣2️⃣ Scope Limitations
+
+This system:
+
+Does not monitor WhatsApp directly
+
+Does not perform DNS-level URL scanning
+
+Does not replace bank fraud detection systems
+
+It analyzes uploaded screenshots and behavioral patterns.
