@@ -59,7 +59,10 @@ You are a cybersecurity AI expert specialising in financial fraud and social eng
 detection in India (WhatsApp scams, UPI fraud, OTP phishing, fake KYC alerts, etc.).
 
 Analyse the provided screenshot/message and return ONLY a valid JSON object with these exact keys:
+- is_scam: boolean
 - scam_probability: integer 0-100
+- scam_type: exactly one string from this list ONLY:
+    ["UPI Refund Scam", "Fake KYC Suspension", "OTP Theft Scam", "Job Offer Scam", "Prize Lottery Scam", "Bank Account Blocked Scam", "Investment / Crypto Scam", "Unknown / Other"]
 - tactics_detected: array of strings, each from ONLY this list:
     ["Urgency", "Fear", "Authority impersonation", "Reward bait", "Scarcity"]
 - explanation: string (2-3 sentences in plain English describing what makes this suspicious)
@@ -123,8 +126,28 @@ def _heuristic_scam_analysis(text: str) -> dict:
         explanation = "No obvious scam indicators detected in this message."
         action = "Stay vigilant and never share OTPs or financial credentials with anyone."
 
+    # Very naive type classification
+    scam_type = "Unknown / Other"
+    if score >= 30:
+        if "Fear" in tactics and "Authority impersonation" in tactics:
+            scam_type = "Fake KYC Suspension"
+            if any(kw in text_lower for kw in ["account blocked", "suspended"]):
+                scam_type = "Bank Account Blocked Scam"
+        elif "Reward bait" in tactics:
+            scam_type = "Prize Lottery Scam"
+        elif any(kw in text_lower for kw in ["job", "offer", "work from home", "hiring"]):
+            scam_type = "Job Offer Scam"
+        elif any(kw in text_lower for kw in ["crypto", "invest", "returns"]):
+            scam_type = "Investment / Crypto Scam"
+        elif any(kw in text_lower for kw in ["upi", "refund"]):
+            scam_type = "UPI Refund Scam"
+        elif "otp" in text_lower or "pin" in text_lower:
+            scam_type = "OTP Theft Scam"
+
     return {
+        "is_scam": score >= 60,
         "scam_probability": score,
+        "scam_type": scam_type,
         "tactics_detected": tactics,
         "explanation": explanation,
         "recommended_action": action,
@@ -163,9 +186,14 @@ def _analyse_with_vision(image_bytes: bytes, ocr_text: str = "") -> dict:
 
     raw = _chat(messages, model=GROQ_VISION_MODEL, max_tokens=800)
     result = _extract_json(raw)
-    for key in ("scam_probability", "tactics_detected", "explanation", "recommended_action"):
+    for key in ("is_scam", "scam_probability", "scam_type", "tactics_detected", "explanation", "recommended_action"):
         if key not in result:
-            raise ValueError(f"Missing key: {key}")
+            if key == "scam_type":
+                result["scam_type"] = "Unknown / Other"
+            elif key == "is_scam":
+                result["is_scam"] = result.get("scam_probability", 0) >= 60
+            else:
+                raise ValueError(f"Missing key: {key}")
     result["scam_probability"] = int(result["scam_probability"])
     return result
 
@@ -182,9 +210,14 @@ def _analyse_with_text(extracted_text: str) -> dict:
     ]
     raw = _chat(messages, max_tokens=800)
     result = _extract_json(raw)
-    for key in ("scam_probability", "tactics_detected", "explanation", "recommended_action"):
+    for key in ("is_scam", "scam_probability", "scam_type", "tactics_detected", "explanation", "recommended_action"):
         if key not in result:
-            raise ValueError(f"Missing key: {key}")
+            if key == "scam_type":
+                result["scam_type"] = "Unknown / Other"
+            elif key == "is_scam":
+                result["is_scam"] = result.get("scam_probability", 0) >= 60
+            else:
+                raise ValueError(f"Missing key: {key}")
     result["scam_probability"] = int(result["scam_probability"])
     return result
 
@@ -192,6 +225,19 @@ def _analyse_with_text(extracted_text: str) -> dict:
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
+def translate_to_english(text: str) -> str:
+    """Translate extracted text to English using Groq."""
+    prompt = f"Translate the following text to English. Only return the translated text.\n\nText:\n{text}"
+    messages = [
+        {"role": "user", "content": prompt}
+    ]
+    try:
+        return _chat(messages, max_tokens=1000).strip()
+    except Exception as exc:
+        logger.warning(f"Groq translation failed: {exc}")
+        return text  # Fallback to original text
+
 
 def analyse_scam(extracted_text: str, image_bytes: bytes | None = None) -> dict:
     """
@@ -226,7 +272,9 @@ def analyse_scam(extracted_text: str, image_bytes: bytes | None = None) -> dict:
     # Path 3: nothing available
     logger.warning("No image bytes and no OCR text — returning empty result.")
     return {
+        "is_scam": False,
         "scam_probability": 0,
+        "scam_type": "Unknown / Other",
         "tactics_detected": [],
         "explanation": "No content could be extracted from the image. Please ensure the screenshot is clear and contains readable text or visible content.",
         "recommended_action": "Try uploading a clearer screenshot.",

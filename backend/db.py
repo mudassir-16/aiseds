@@ -32,14 +32,21 @@ def save_scan_report(user_id: str, data: dict, **_) -> None:
     if not client:
         return
     try:
-        client.table("scan_reports").insert({
+        payload = {
             "user_id": user_id,
             "extracted_text": data.get("extracted_text", ""),
             "scam_probability": data.get("scam_probability", 0),
+            "scam_type": data.get("scam_type", "Unknown / Other"),
             "tactics_detected": data.get("tactics_detected", []),
             "explanation": data.get("explanation", ""),
             "recommended_action": data.get("recommended_action", ""),
-        }).execute()
+        }
+        if "language" in data:
+            payload["language"] = data["language"]
+        if "translated_text" in data:
+            payload["translated_text"] = data["translated_text"]
+
+        client.table("scan_reports").insert(payload).execute()
         logger.info(f"Saved scan report for user {user_id[:8]}…")
     except Exception as e:
         logger.error(f"Failed to save scan report: {e}")

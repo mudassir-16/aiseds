@@ -7,9 +7,14 @@ from pydantic import BaseModel
 
 from auth import get_current_user
 from ocr import extract_text
-from groq_client import analyse_scam, predict_risk
+from groq_client import analyse_scam, predict_risk, translate_to_english
 from risk import calculate_risk
 from db import save_scan_report, save_risk_report
+
+try:
+    from langdetect import detect
+except ImportError:
+    def detect(text): return "unknown"
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -23,6 +28,13 @@ def _get_jwt(request: Request) -> str:
     return auth.removeprefix("Bearer ").strip()
 
 
+def _detect_language(text: str) -> str:
+    try:
+        return detect(text)
+    except:
+        return "unknown"
+
+
 # ---------------------------------------------------------------------------
 # POST /api/analyze-image
 # ---------------------------------------------------------------------------
@@ -34,8 +46,8 @@ async def analyze_image(
     current_user: dict = Depends(get_current_user),
 ):
     """
-    Accept an image upload, run OCR, send to Groq for scam analysis,
-    save the result to Supabase, and return the JSON report.
+    Accept an image upload, run OCR, detect language, translate if necessary,
+    send to Groq for scam analysis, save the result to Supabase, and return the JSON report.
     """
     # File type validation
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -47,16 +59,35 @@ async def analyze_image(
     if len(image_bytes) > MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large. Maximum size is 5 MB.")
 
-    # OCR (supplementary context for vision model)
+    # Multilingual OCR Text Extraction
     try:
         extracted_text = extract_text(image_bytes)
     except Exception as e:
         logger.error(f"OCR failed: {e}")
         extracted_text = ""
 
-    # AI analysis — vision model sees the image directly; OCR text is extra context
-    result = analyse_scam(extracted_text, image_bytes=image_bytes)
+    # Language Detection & Translation Pipeline
+    language = "unknown"
+    translated_text = ""
+    analysis_text = extracted_text
+
+    if extracted_text.strip():
+        language = _detect_language(extracted_text)
+        logger.info(f"Detected language: {language}")
+
+        if language not in ("en", "unknown"):
+            logger.info("Non-English text detected. Translating...")
+            translated_text = translate_to_english(extracted_text)
+            analysis_text = translated_text
+
+    # AI analysis — vision model sees the image directly; OCR test/translated text is extra context
+    result = analyse_scam(analysis_text, image_bytes=image_bytes)
+
+    # Attach original & translated attributes for transparency
     result["extracted_text"] = extracted_text
+    result["language"] = language
+    if translated_text:
+        result["translated_text"] = translated_text
 
     # Persist to Supabase
     user_id = current_user.get("sub", "")
@@ -99,6 +130,7 @@ async def risk_score(
         "predicted_scam_type": prediction["predicted_scam_type"],
         "explanation": prediction["explanation"],
         "recommendations": prediction["recommendations"],
+        "correlation_insight": scored["correlation_insight"],
     }
 
     # Persist to Supabase

@@ -15,8 +15,9 @@ def _get_reader():
     if _reader is None:
         try:
             import easyocr
-            _reader = easyocr.Reader(['en'], gpu=False, verbose=False)
-            logger.info("EasyOCR reader initialized")
+            # Support English, Hindi, Tamil, Telugu
+            _reader = easyocr.Reader(['en', 'hi', 'ta', 'te'], gpu=False, verbose=False)
+            logger.info("EasyOCR reader initialized with en, hi, ta, te")
         except Exception as e:
             logger.error(f"EasyOCR init failed: {e}")
             _reader = False  # Mark as failed so we don't retry
@@ -52,7 +53,8 @@ def extract_text(image_bytes: bytes) -> str:
         from PIL import Image
         import io
         img = Image.open(io.BytesIO(image_bytes))
-        text = pytesseract.image_to_string(img).strip()
+        # Add support for English, Hindi, Tamil, Telugu
+        text = pytesseract.image_to_string(img, lang="eng+hin+tam+tel", config="--psm 6").strip()
         if text:
             logger.info("Pytesseract fallback successful")
             return text
