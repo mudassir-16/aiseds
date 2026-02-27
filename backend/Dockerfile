@@ -18,8 +18,6 @@ WORKDIR /app
 # Copy requirements file first (for caching)
 COPY requirements.txt .
 
-# Install CPU variant of PyTorch first to save disk space & memory on Render
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # Install the rest of the python requirements
 RUN pip install --no-cache-dir -r requirements.txt
